@@ -10,7 +10,12 @@ function assetRouter(root, ffmpeg) {
     const folder = path.join(root, "Data", "Assets");
     const manifest = path.join(folder, "library.json");
     const defaults = { items: [], wing: "", banner: "", nextDanceNumber: 1 };
-    const categories = { character: "characters", wing: "wings", banner: "banners", avatarFrame: "avatar-frames" };
+    const categories = {
+        character: "characters",
+        wing: "wings",
+        banner: "banners",
+        avatarFrame: "avatar-frames",
+    };
     const numbering = {
         character: ["danceNumber", "nextDanceNumber"],
         wing: ["displayNumber", "nextWingNumber"],
@@ -84,12 +89,16 @@ function assetRouter(root, ffmpeg) {
         const job = queue.then(async () => {
             await fs.mkdir(folder, { recursive: true });
             const data = await read();
-            for (const [kind, [numberKey, counterKey]] of Object.entries(numbering)) {
-                const items = data.items.filter(item => item.kind === kind);
+            for (const [kind, [numberKey, counterKey]] of Object.entries(
+                numbering,
+            )) {
+                const items = data.items.filter((item) => item.kind === kind);
                 let next = data[counterKey] || 1;
-                for (const item of items) next = Math.max(next, (item[numberKey] || 0) + 1);
+                for (const item of items)
+                    next = Math.max(next, (item[numberKey] || 0) + 1);
                 for (const item of items) {
-                    if (!item.deleted && !item[numberKey]) item[numberKey] = next++;
+                    if (!item.deleted && !item[numberKey])
+                        item[numberKey] = next++;
                 }
                 data[counterKey] = next;
             }
@@ -106,7 +115,10 @@ function assetRouter(root, ffmpeg) {
         try {
             await mutate(() => {});
             const data = await read();
-            res.json({ ...data, items: data.items.filter((item) => !item.deleted) });
+            res.json({
+                ...data,
+                items: data.items.filter((item) => !item.deleted),
+            });
         } catch (e) {
             next(e);
         }
@@ -127,7 +139,9 @@ function assetRouter(root, ffmpeg) {
             )
                 return res
                     .status(400)
-                    .json({ error: "Chọn GIF, WebP, PNG hoặc JPG tối đa 20 MB." });
+                    .json({
+                        error: "Chọn GIF, WebP, PNG hoặc JPG tối đa 20 MB.",
+                    });
             const id = crypto.randomUUID();
             const category = categories[kind];
             const dir = path.join(folder, category, id);
@@ -139,30 +153,48 @@ function assetRouter(root, ffmpeg) {
                 );
                 await fs.writeFile(input, req.body);
                 if (/\.webp$/i.test(name)) {
-                    await run(process.env.PYTHON_PATH || "python", [path.join(__dirname, "../../scripts/decode-webp.py"), input, dir],
-                        { windowsHide: true, timeout: 90000, maxBuffer: 1048576 });
+                    await run(
+                        process.env.PYTHON_PATH || "python",
+                        [
+                            path.join(
+                                __dirname,
+                                "../../scripts/decode-webp.py",
+                            ),
+                            input,
+                            dir,
+                        ],
+                        {
+                            windowsHide: true,
+                            timeout: 90000,
+                            maxBuffer: 1048576,
+                        },
+                    );
                 } else {
-                await run(
-                    ffmpeg,
-                    [
-                        "-hide_banner",
-                        "-loglevel",
-                        "error",
-                        "-threads",
-                        "1",
-                        ...(/\.gif$/i.test(name) ? [] : ["-loop", "1"]),
-                        "-i",
-                        input,
-                        "-vf",
-                        "fps=12,scale=512:512:force_original_aspect_ratio=decrease",
-                        "-frames:v",
-                        /\.gif$/i.test(name) ? "120" : "1",
-                        "-threads",
-                        "1",
-                        path.join(dir, "frame_%03d.png"),
-                    ],
-                    { windowsHide: true, timeout: 90000, maxBuffer: 1048576 },
-                );
+                    await run(
+                        ffmpeg,
+                        [
+                            "-hide_banner",
+                            "-loglevel",
+                            "error",
+                            "-threads",
+                            "1",
+                            ...(/\.gif$/i.test(name) ? [] : ["-loop", "1"]),
+                            "-i",
+                            input,
+                            "-vf",
+                            "fps=12,scale=512:512:force_original_aspect_ratio=decrease",
+                            "-frames:v",
+                            /\.gif$/i.test(name) ? "120" : "1",
+                            "-threads",
+                            "1",
+                            path.join(dir, "frame_%03d.png"),
+                        ],
+                        {
+                            windowsHide: true,
+                            timeout: 90000,
+                            maxBuffer: 1048576,
+                        },
+                    );
                 }
                 const frames = (await fs.readdir(dir))
                     .filter((n) => /^frame_\d+\.png$/.test(n))
@@ -175,7 +207,12 @@ function assetRouter(root, ffmpeg) {
                     enabled: true,
                     fps: 12,
                     frames: frames.length,
-                    preview: "/library-files/" + category + "/" + id + "/frame_001.png",
+                    preview:
+                        "/library-files/" +
+                        category +
+                        "/" +
+                        id +
+                        "/frame_001.png",
                     source:
                         "/library-files/" +
                         category +
@@ -191,11 +228,22 @@ function assetRouter(root, ffmpeg) {
                         item[numberKey] = data[counterKey]++;
                     }
                     if (item.kind === "avatarFrame") {
-                        item.avatarRank = [1, 2, 3].find(rank => !data.items.some(
-                            entry => entry.kind === "avatarFrame" && !entry.deleted && entry.avatarRank === rank,
-                        ));
+                        item.avatarRank = [1, 2, 3].find(
+                            (rank) =>
+                                !data.items.some(
+                                    (entry) =>
+                                        entry.kind === "avatarFrame" &&
+                                        !entry.deleted &&
+                                        entry.avatarRank === rank,
+                                ),
+                        );
                         if (!item.avatarRank) {
-                            throw Object.assign(new Error("Đã đủ 3 khung avatar. Xóa khung cũ để thay ảnh."), { status: 409 });
+                            throw Object.assign(
+                                new Error(
+                                    "Đã đủ 3 khung avatar. Xóa khung cũ để thay ảnh.",
+                                ),
+                                { status: 409 },
+                            );
                         }
                     }
                     data.items.push(item);
@@ -239,7 +287,9 @@ function assetRouter(root, ffmpeg) {
         async (req, res, next) => {
             try {
                 const removed = await mutate((data) => {
-                    const index = data.items.findIndex((item) => item.id === req.body?.id && !item.deleted);
+                    const index = data.items.findIndex(
+                        (item) => item.id === req.body?.id && !item.deleted,
+                    );
                     if (index < 0) return false;
                     const item = data.items[index];
                     if (data[item.kind] === item.id) data[item.kind] = "";
@@ -251,16 +301,29 @@ function assetRouter(root, ffmpeg) {
                     }
                     return item;
                 });
-                if (!removed) return res.status(404).json({ error: "Asset không tồn tại." });
+                if (!removed)
+                    return res
+                        .status(404)
+                        .json({ error: "Asset không tồn tại." });
                 if (!removed.id.startsWith("builtin:")) {
                     const category = categories[removed.kind];
-                    if (category && /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(removed.id)) {
+                    if (
+                        category &&
+                        /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(
+                            removed.id,
+                        )
+                    ) {
                         const parent = path.resolve(folder, category);
                         const directory = path.resolve(parent, removed.id);
                         if (path.dirname(directory) === parent) {
-                            await fs.rm(directory, { recursive: true, force: true }).catch((error) =>
-                                console.warn("Could not clean deleted asset files:", error.message),
-                            );
+                            await fs
+                                .rm(directory, { recursive: true, force: true })
+                                .catch((error) =>
+                                    console.warn(
+                                        "Could not clean deleted asset files:",
+                                        error.message,
+                                    ),
+                                );
                         }
                     }
                 }
@@ -292,7 +355,10 @@ function assetRouter(root, ffmpeg) {
             try {
                 const data = await read();
                 const id = String(req.body?.id || "");
-                if (id && !data.items.some((item) => item.id === id && !item.deleted))
+                if (
+                    id &&
+                    !data.items.some((item) => item.id === id && !item.deleted)
+                )
                     return res
                         .status(400)
                         .json({ error: "Asset không tồn tại." });
@@ -318,8 +384,8 @@ function assetRouter(root, ffmpeg) {
                 error.status === 409
                     ? error.message
                     : error.status === 413
-                    ? "File tối đa 20 MB."
-                    : "Không xử lý được asset. Kiểm tra định dạng hoặc bộ giải mã FFmpeg/Python Pillow.",
+                      ? "File tối đa 20 MB."
+                      : "Không xử lý được asset. Kiểm tra định dạng hoặc bộ giải mã FFmpeg/Python Pillow.",
         });
     });
     return router;

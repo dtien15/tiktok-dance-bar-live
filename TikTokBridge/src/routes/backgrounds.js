@@ -83,11 +83,9 @@ function backgroundsRouter(root) {
                 name === "nenamphu.png" ||
                 !Buffer.isBuffer(body)
             )
-                return res
-                    .status(400)
-                    .json({
-                        error: "Chọn ảnh PNG hoặc JPG hợp lệ, tên khác nền mặc định.",
-                    });
+                return res.status(400).json({
+                    error: "Chọn ảnh PNG hoặc JPG hợp lệ, tên khác nền mặc định.",
+                });
             const png =
                 body.length > 24 &&
                 body
@@ -99,11 +97,9 @@ function backgroundsRouter(root) {
                 body[1] === 216 &&
                 body[2] === 255;
             if (/\.png$/i.test(name) ? !png : !jpeg)
-                return res
-                    .status(400)
-                    .json({
-                        error: "Nội dung file không đúng định dạng PNG/JPG.",
-                    });
+                return res.status(400).json({
+                    error: "Nội dung file không đúng định dạng PNG/JPG.",
+                });
             try {
                 await fs.mkdir(folder, { recursive: true });
                 await fs.writeFile(path.join(folder, name), body, {
@@ -112,11 +108,9 @@ function backgroundsRouter(root) {
                 res.status(201).json({ name });
             } catch (error) {
                 if (error.code === "EEXIST")
-                    return res
-                        .status(409)
-                        .json({
-                            error: "Tên ảnh đã tồn tại. Hãy đổi tên file.",
-                        });
+                    return res.status(409).json({
+                        error: "Tên ảnh đã tồn tại. Hãy đổi tên file.",
+                    });
                 next(error);
             }
         },

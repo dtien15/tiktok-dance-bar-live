@@ -98,7 +98,11 @@
         }
     });
     setInterval(async () => {
-        if (!$("tab-assets").classList.contains("active") || $("tab-stage").hidden) return;
+        if (
+            !$("tab-assets").classList.contains("active") ||
+            $("tab-stage").hidden
+        )
+            return;
         try {
             const data = await request("/api/stage");
             $("stage-game-status").textContent = data.status.message;

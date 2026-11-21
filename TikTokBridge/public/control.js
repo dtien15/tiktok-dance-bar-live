@@ -85,12 +85,22 @@ function selectSource(source) {
     }
     ui.recentGifts.hidden = source !== "gift";
     document.getElementById("gift-catalog-status").hidden = source !== "gift";
-    ui.filterMaster.placeholder = source === "gift" ? "Tìm quà, hiệu ứng, ID…" : source === "like" ? "Tìm mốc tim…" : "Tìm bình luận, chia sẻ…";
+    ui.filterMaster.placeholder =
+        source === "gift"
+            ? "Tìm quà, hiệu ứng, ID…"
+            : source === "like"
+              ? "Tìm mốc tim…"
+              : "Tìm bình luận, chia sẻ…";
     ui.filterMaster.value = "";
-    selectRule([...ui.masterRules.children].find(row => row.dataset.src === source), false);
+    selectRule(
+        [...ui.masterRules.children].find((row) => row.dataset.src === source),
+        false,
+    );
 }
 for (const button of sourceButtons)
-    button.addEventListener("click", () => selectSource(button.dataset.ruleSource));
+    button.addEventListener("click", () =>
+        selectSource(button.dataset.ruleSource),
+    );
 let activeRuleId;
 let testingRule;
 let testTimeout;
@@ -180,43 +190,76 @@ function updateRuleFields(row) {
     const heart = source === "like";
     const actionPicker = row.querySelector('[data-field="action"]');
     for (const option of actionPicker.options) {
-        option.hidden = heart ? !option.hasAttribute("data-heart-action") && option.value !== "fireworks"
+        option.hidden = heart
+            ? !option.hasAttribute("data-heart-action") &&
+              option.value !== "fireworks"
             : option.hasAttribute("data-heart-action");
         option.disabled = option.hidden;
     }
-    if (actionPicker.selectedOptions[0]?.disabled) actionPicker.value = heart ? "party" : "dance";
+    if (actionPicker.selectedOptions[0]?.disabled)
+        actionPicker.value = heart ? "party" : "dance";
     const action = actionPicker.value;
     const enabled = row.querySelector('[data-field="enabled"]').checked;
     row.dataset.src = source === "share" ? "chat" : source;
     row.querySelector("[data-social-field]").hidden = gift || heart;
-    for (const option of sourcePicker.options) option.hidden = option.value === "gift" || option.value === "like";
+    for (const option of sourcePicker.options)
+        option.hidden = option.value === "gift" || option.value === "like";
     row.querySelector("[data-heart-field]").hidden = !heart;
-    row.querySelector("[data-heart-goal-label]").textContent = action === "level_up" ? "Số tim cá nhân để lên 1 cấp" : "Mốc tim của cả phòng";
+    row.querySelector("[data-heart-goal-label]").textContent =
+        action === "level_up"
+            ? "Số tim cá nhân để lên 1 cấp"
+            : "Mốc tim của cả phòng";
     const durationField = row.querySelector("[data-duration-field]");
-    durationField.hidden = ["join", "change", "wing", "avatar_frame", "medal", "vip_set", "level_up", "fireworks"].includes(action) || (gift && action === "camera");
+    durationField.hidden =
+        [
+            "join",
+            "change",
+            "wing",
+            "avatar_frame",
+            "medal",
+            "vip_set",
+            "level_up",
+            "fireworks",
+        ].includes(action) ||
+        (gift && action === "camera");
     durationField.querySelector(".rule-field-label").textContent =
-        action === "orbit" ? "Thời gian bay (giây)" : action === "topdj" ? "Thời gian làm DJ (giây)" : "Thời lượng (giây)";
+        action === "orbit"
+            ? "Thời gian bay (giây)"
+            : action === "topdj"
+              ? "Thời gian làm DJ (giây)"
+              : "Thời lượng (giây)";
     row.querySelector("[data-zoom-field]").hidden = action !== "topdj" && !gift;
     row.querySelector("[data-orbit-duration-help]").hidden = action !== "orbit";
-    row.querySelector("[data-trigger-field]").hidden = heart || source === "share";
+    row.querySelector("[data-trigger-field]").hidden =
+        heart || source === "share";
     row.dataset.enabled = enabled;
-    row.querySelector("[data-trigger-label]").textContent = gift ? "Tên quà" : "Lệnh bình luận";
-    row.querySelectorAll("[data-gift-field]").forEach((field) => { field.hidden = !gift; });
+    row.querySelector("[data-trigger-label]").textContent = gift
+        ? "Tên quà"
+        : "Lệnh bình luận";
+    row.querySelectorAll("[data-gift-field]").forEach((field) => {
+        field.hidden = !gift;
+    });
     row.querySelector("[data-chat-field]").hidden = source !== "chat";
     row.querySelectorAll("[data-title-field]").forEach((field) => {
         field.hidden = !["medal", "vip_set"].includes(action);
     });
-    row.querySelector("[data-firework-field]").hidden = !["fireworks", "topdj"].includes(action);
-    row.querySelector('[data-command="test"]').disabled = !enabled || !!testingRule;
-    const giftId = gift && row.querySelector('[data-field="giftId"]').value.trim();
+    row.querySelector("[data-firework-field]").hidden = ![
+        "fireworks",
+        "topdj",
+    ].includes(action);
+    row.querySelector('[data-command="test"]').disabled =
+        !enabled || !!testingRule;
+    const giftId =
+        gift && row.querySelector('[data-field="giftId"]').value.trim();
     const picker = row.querySelector("[data-gift-picker]");
-    picker.textContent = recentGifts.get(giftId)?.giftName ||
-        (giftId && row.querySelector('[data-field="trigger"]').value) || "Chọn từ thư viện quà";
+    picker.textContent =
+        recentGifts.get(giftId)?.giftName ||
+        (giftId && row.querySelector('[data-field="trigger"]').value) ||
+        "Chọn từ thư viện quà";
     const preview = row.querySelector("[data-gift-preview]");
     const image = recentGifts.get(giftId)?.giftPictureUrl;
     preview.hidden = !image;
     if (image && preview.getAttribute("src") !== image) preview.src = image;
-
 }
 
 function setRuleTestStatus(row, message, error = false) {
@@ -234,22 +277,37 @@ function finishRuleTest(message, error) {
 }
 
 function updateRuleList() {
-    const rows = [...ui.masterRules.children].filter(row => row.dataset.src === ruleSource);
+    const rows = [...ui.masterRules.children].filter(
+        (row) => row.dataset.src === ruleSource,
+    );
     const query = ui.filterMaster.value.trim().toLocaleLowerCase("vi");
     const selected = rows.find((row) => row.dataset.ruleId === activeRuleId);
     const buttons = [];
     for (const row of ui.masterRules.children) row.hidden = row !== selected;
     rows.forEach((row, index) => {
         row.querySelector('[data-command="up"]').disabled = index === 0;
-        row.querySelector('[data-command="down"]').disabled = index === rows.length - 1;
+        row.querySelector('[data-command="down"]').disabled =
+            index === rows.length - 1;
         const source = row.querySelector('[data-field="source"]').value;
-        const trigger = source === "share" ? "Chia sẻ LIVE" : source === "like"
-            ? `${Number(row.querySelector('[data-field="heartGoal"]').value).toLocaleString("vi-VN")} tim`
-            : row.querySelector('[data-field="trigger"]').value.trim();
+        const trigger =
+            source === "share"
+                ? "Chia sẻ LIVE"
+                : source === "like"
+                  ? `${Number(row.querySelector('[data-field="heartGoal"]').value).toLocaleString("vi-VN")} tim`
+                  : row.querySelector('[data-field="trigger"]').value.trim();
         const gift = row.dataset.src === "gift";
-        const giftId = gift ? row.querySelector('[data-field="giftId"]').value.trim() : "";
-        const action = row.querySelector('[data-field="action"]').selectedOptions[0]?.textContent || "";
-        if (!`${trigger} ${giftId} ${action}`.toLocaleLowerCase("vi").includes(query)) return;
+        const giftId = gift
+            ? row.querySelector('[data-field="giftId"]').value.trim()
+            : "";
+        const action =
+            row.querySelector('[data-field="action"]').selectedOptions[0]
+                ?.textContent || "";
+        if (
+            !`${trigger} ${giftId} ${action}`
+                .toLocaleLowerCase("vi")
+                .includes(query)
+        )
+            return;
 
         const button = document.createElement("button");
         button.type = "button";
@@ -266,7 +324,9 @@ function updateRuleList() {
             image.src = giftImage;
             image.alt = "";
             image.width = image.height = 32;
-            image.addEventListener("error", () => image.remove(), { once: true });
+            image.addEventListener("error", () => image.remove(), {
+                once: true,
+            });
             const text = document.createElement("div");
             text.append(title, meta);
             button.classList.add("interaction-item-with-icon");
@@ -278,14 +338,19 @@ function updateRuleList() {
     ui.masterIndex.replaceChildren(...buttons);
     ui.masterEditorEmpty.hidden = !!selected;
     ui.masterEmpty.hidden = buttons.length > 0;
-    ui.masterEmpty.textContent = rows.length ? "Không tìm thấy luật." : "Chưa có luật.";
+    ui.masterEmpty.textContent = rows.length
+        ? "Không tìm thấy luật."
+        : "Chưa có luật.";
 }
 
 function selectRule(row, focus = true) {
     if (row && row.dataset.src !== ruleSource) selectSource(row.dataset.src);
     activeRuleId = row?.dataset.ruleId;
     updateRuleList();
-    if (focus) row?.querySelector('[data-field="trigger"]').focus({ preventScroll: true });
+    if (focus)
+        row?.querySelector('[data-field="trigger"]').focus({
+            preventScroll: true,
+        });
 }
 
 function markMasterDirty() {
@@ -295,13 +360,17 @@ function markMasterDirty() {
 }
 
 function addRule(rule) {
-    if (!masterLoaded) return setMasterMessage("Đang tải cấu hình từ máy chủ.", true);
-    if (ui.masterRules.children.length >= 100) return setMasterMessage("Tối đa 100 luật.", true);
+    if (!masterLoaded)
+        return setMasterMessage("Đang tải cấu hình từ máy chủ.", true);
+    if (ui.masterRules.children.length >= 100)
+        return setMasterMessage("Tối đa 100 luật.", true);
     ui.filterMaster.value = "";
     const row = createRuleRow(rule);
     ui.masterRules.append(row);
     selectRule(row);
-    ui.masterIndex.querySelector('[aria-pressed="true"]')?.scrollIntoView({ block: "nearest" });
+    ui.masterIndex
+        .querySelector('[aria-pressed="true"]')
+        ?.scrollIntoView({ block: "nearest" });
     markMasterDirty();
 }
 
@@ -317,7 +386,11 @@ function createRuleRow(rule) {
             input.value = (Number(rule.zoomDurationMs) || 3500) / 1000;
         else if (input.type === "checkbox")
             input.checked = rule[field] !== false;
-        else input.value = field === "action" && rule[field] === "vip" ? "camera" : rule[field] ?? "";
+        else
+            input.value =
+                field === "action" && rule[field] === "vip"
+                    ? "camera"
+                    : (rule[field] ?? "");
     }
     row.addEventListener("input", (event) => {
         if (event.target.closest("[data-test-quantity]")) return;
@@ -325,48 +398,83 @@ function createRuleRow(rule) {
         updateRuleList();
         markMasterDirty();
     });
-    picker.addEventListener("click", () => openGiftDialog(gift => {
-        for (const [field, value] of Object.entries({
-            trigger: gift.giftName, giftId: gift.giftId, match: "exact", displayDiamonds: gift.diamondCount,
-        })) row.querySelector(`[data-field="${field}"]`).value = value;
-        updateRuleFields(row);
-        updateRuleList();
-        markMasterDirty();
-    }));
-    row.querySelector('[data-command="delete"]').addEventListener("click", () => {
-        const next = [...ui.masterRules.children].find(item => item !== row && item.dataset.src === ruleSource);
-        row.remove();
-        selectRule(next);
-        markMasterDirty();
-    });
+    picker.addEventListener("click", () =>
+        openGiftDialog((gift) => {
+            for (const [field, value] of Object.entries({
+                trigger: gift.giftName,
+                giftId: gift.giftId,
+                match: "exact",
+                displayDiamonds: gift.diamondCount,
+            }))
+                row.querySelector(`[data-field="${field}"]`).value = value;
+            updateRuleFields(row);
+            updateRuleList();
+            markMasterDirty();
+        }),
+    );
+    row.querySelector('[data-command="delete"]').addEventListener(
+        "click",
+        () => {
+            const next = [...ui.masterRules.children].find(
+                (item) => item !== row && item.dataset.src === ruleSource,
+            );
+            row.remove();
+            selectRule(next);
+            markMasterDirty();
+        },
+    );
     row.querySelector('[data-command="up"]').addEventListener("click", () => {
-        const siblings = [...ui.masterRules.children].filter(item => item.dataset.src === row.dataset.src);
+        const siblings = [...ui.masterRules.children].filter(
+            (item) => item.dataset.src === row.dataset.src,
+        );
         siblings[siblings.indexOf(row) - 1]?.before(row);
         updateRuleList();
         markMasterDirty();
     });
     row.querySelector('[data-command="down"]').addEventListener("click", () => {
-        const siblings = [...ui.masterRules.children].filter(item => item.dataset.src === row.dataset.src);
+        const siblings = [...ui.masterRules.children].filter(
+            (item) => item.dataset.src === row.dataset.src,
+        );
         siblings[siblings.indexOf(row) + 1]?.after(row);
         updateRuleList();
         markMasterDirty();
     });
     row.querySelector('[data-command="test"]').addEventListener("click", () => {
         if (testingRule) return;
-        const gift = row.querySelector('[data-field="source"]').value === "gift";
-        const repeatCount = gift ? Number(row.querySelector("[data-test-count]").value) : 1;
-        if (!Number.isInteger(repeatCount) || repeatCount < 1 || repeatCount > 100)
+        const gift =
+            row.querySelector('[data-field="source"]').value === "gift";
+        const repeatCount = gift
+            ? Number(row.querySelector("[data-test-count]").value)
+            : 1;
+        if (
+            !Number.isInteger(repeatCount) ||
+            repeatCount < 1 ||
+            repeatCount > 100
+        )
             return setRuleTestStatus(row, "Nhập số lượng từ 1 đến 100.", true);
-        if (!send({ type: "master_test", ruleId: row.dataset.ruleId, repeatCount, master: readMasterFromUi() }))
+        if (
+            !send({
+                type: "master_test",
+                ruleId: row.dataset.ruleId,
+                repeatCount,
+                master: readMasterFromUi(),
+            })
+        )
             return setRuleTestStatus(row, "Mất kết nối máy chủ.", true);
         testingRule = row;
         setRuleTestStatus(row, "Đang gửi sang game…");
         for (const rule of ui.masterRules.children) updateRuleFields(rule);
-        testTimeout = setTimeout(() => finishRuleTest("Máy chủ chưa phản hồi. Thử lại.", true), 8000);
+        testTimeout = setTimeout(
+            () => finishRuleTest("Máy chủ chưa phản hồi. Thử lại.", true),
+            8000,
+        );
     });
-    row.querySelectorAll("[data-test-preset]").forEach(button => button.addEventListener("click", () => {
-        row.querySelector("[data-test-count]").value = button.dataset.testPreset;
-    }));
+    row.querySelectorAll("[data-test-preset]").forEach((button) =>
+        button.addEventListener("click", () => {
+            row.querySelector("[data-test-count]").value =
+                button.dataset.testPreset;
+        }),
+    );
     updateRuleFields(row);
     return row;
 }
@@ -381,9 +489,16 @@ function renderMaster(config) {
     ui.masterRules.replaceChildren(
         ...(masterConfig.rules || []).map(createRuleRow),
     );
-    const rows = [...ui.masterRules.children].filter(row => row.dataset.src === ruleSource);
-    if (!rows.some(row => row.dataset.ruleId === activeRuleId)) selectSource(ruleSource);
-    else selectRule(rows.find(row => row.dataset.ruleId === activeRuleId), false);
+    const rows = [...ui.masterRules.children].filter(
+        (row) => row.dataset.src === ruleSource,
+    );
+    if (!rows.some((row) => row.dataset.ruleId === activeRuleId))
+        selectSource(ruleSource);
+    else
+        selectRule(
+            rows.find((row) => row.dataset.ruleId === activeRuleId),
+            false,
+        );
 }
 
 function readMasterFromUi() {
@@ -392,7 +507,9 @@ function readMasterFromUi() {
             id: row.dataset.ruleId,
             enabled: row.querySelector('[data-field="enabled"]').checked,
             source: row.querySelector('[data-field="source"]').value,
-            heartGoal: Number(row.querySelector('[data-field="heartGoal"]').value),
+            heartGoal: Number(
+                row.querySelector('[data-field="heartGoal"]').value,
+            ),
             trigger: row.querySelector('[data-field="trigger"]').value.trim(),
             giftId: row.querySelector('[data-field="giftId"]').value.trim(),
             match: row.querySelector('[data-field="match"]').value,
@@ -401,7 +518,11 @@ function readMasterFromUi() {
                 Number(
                     row.querySelector('[data-field="displayDiamonds"]').value,
                 ) || 0,
-            zoomDurationMs: Math.round((Number(row.querySelector('[data-field="zoomSeconds"]').value) || 3.5) * 1000),
+            zoomDurationMs: Math.round(
+                (Number(
+                    row.querySelector('[data-field="zoomSeconds"]').value,
+                ) || 3.5) * 1000,
+            ),
             durationMs: Math.round(
                 (Number(
                     row.querySelector('[data-field="durationSeconds"]').value,
@@ -450,29 +571,39 @@ refreshGiftLibrary.addEventListener("click", () => {
     giftLibraryStatus.textContent = "Đang tải quà từ LIVE…";
     giftRefreshTimer = setTimeout(() => {
         refreshGiftLibrary.disabled = false;
-        giftLibraryStatus.textContent = "Bridge chưa phản hồi. Kiểm tra kết nối LIVE hoặc khởi động lại Bridge.";
+        giftLibraryStatus.textContent =
+            "Bridge chưa phản hồi. Kiểm tra kết nối LIVE hoặc khởi động lại Bridge.";
     }, 15000);
 });
 
 function renderGiftDialog() {
-    const gifts = [...recentGifts.values()].filter(gift =>
-        gift.giftPictureUrl && !failedGiftIcons.has(gift.giftPictureUrl));
-    const priceOf = gift => Number(gift.diamondCount) || 0;
+    const gifts = [...recentGifts.values()].filter(
+        (gift) =>
+            gift.giftPictureUrl && !failedGiftIcons.has(gift.giftPictureUrl),
+    );
+    const priceOf = (gift) => Number(gift.diamondCount) || 0;
     const prices = [...new Set(gifts.map(priceOf))].sort((a, b) => a - b);
     if (giftPrice !== null && !prices.includes(giftPrice)) giftPrice = null;
-    giftPriceTabs.replaceChildren(...[null, ...prices].map(price => {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "btn btn-secondary btn-sm";
-        button.textContent = price === null ? "Tất cả" : price ? `${price.toLocaleString("vi-VN")} xu` : "Chưa rõ giá";
-        button.setAttribute("aria-pressed", String(giftPrice === price));
-        button.addEventListener("click", () => {
-            giftPrice = price;
-            renderGiftDialog();
-            giftPriceTabs.querySelector('[aria-pressed="true"]')?.focus();
-        });
-        return button;
-    }));
+    giftPriceTabs.replaceChildren(
+        ...[null, ...prices].map((price) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "btn btn-secondary btn-sm";
+            button.textContent =
+                price === null
+                    ? "Tất cả"
+                    : price
+                      ? `${price.toLocaleString("vi-VN")} xu`
+                      : "Chưa rõ giá";
+            button.setAttribute("aria-pressed", String(giftPrice === price));
+            button.addEventListener("click", () => {
+                giftPrice = price;
+                renderGiftDialog();
+                giftPriceTabs.querySelector('[aria-pressed="true"]')?.focus();
+            });
+            return button;
+        }),
+    );
     giftGrid.replaceChildren();
     for (const gift of gifts) {
         const price = priceOf(gift);
@@ -486,19 +617,32 @@ function renderGiftDialog() {
         image.alt = "";
         image.loading = "lazy";
         button.disabled = true;
-        image.addEventListener("load", () => { button.disabled = false; }, { once: true });
-        image.addEventListener("error", () => {
-            failedGiftIcons.add(gift.giftPictureUrl);
-            if (!button.isConnected) return;
-            button.remove();
-            if (!giftGrid.childElementCount) giftGrid.textContent = "Mức giá này chưa có quà có ảnh.";
-        }, { once: true });
+        image.addEventListener(
+            "load",
+            () => {
+                button.disabled = false;
+            },
+            { once: true },
+        );
+        image.addEventListener(
+            "error",
+            () => {
+                failedGiftIcons.add(gift.giftPictureUrl);
+                if (!button.isConnected) return;
+                button.remove();
+                if (!giftGrid.childElementCount)
+                    giftGrid.textContent = "Mức giá này chưa có quà có ảnh.";
+            },
+            { once: true },
+        );
         image.src = gift.giftPictureUrl;
         icon.append(image);
         const title = document.createElement("strong");
         title.textContent = gift.giftName || "Quà";
         const cost = document.createElement("small");
-        cost.textContent = price ? `${price.toLocaleString("vi-VN")} xu` : "Chưa rõ giá";
+        cost.textContent = price
+            ? `${price.toLocaleString("vi-VN")} xu`
+            : "Chưa rõ giá";
         button.append(icon, title, cost);
         button.addEventListener("click", () => {
             giftDialog.close();
@@ -506,7 +650,8 @@ function renderGiftDialog() {
         });
         giftGrid.append(button);
     }
-    if (!gifts.length) giftGrid.textContent = "Chưa có quà có ảnh trong thư viện.";
+    if (!gifts.length)
+        giftGrid.textContent = "Chưa có quà có ảnh trong thư viện.";
 }
 
 function renderGiftCatalog() {
@@ -536,44 +681,67 @@ function connectSocket() {
         }
         if (data.type === "status" || data.type === "error") setStatus(data);
         if (data.type === "metrics") setMetrics(data);
-        if (data.type === "master_config" && !masterDirty && savingRevision === null) renderMaster(data.master);
+        if (
+            data.type === "master_config" &&
+            !masterDirty &&
+            savingRevision === null
+        )
+            renderMaster(data.master);
         if (data.type === "master_saved") {
             const savedCurrentDraft = savingRevision === masterRevision;
             savingRevision = null;
             ui.saveMaster.disabled = false;
-            const changedHeartRule = savingHeartRules.some((rule) => !data.master?.rules?.some(
-                (saved) => saved.id === rule.id && saved.source === rule.source &&
-                    saved.action === rule.action && saved.heartGoal === rule.heartGoal,
-            ));
+            const changedHeartRule = savingHeartRules.some(
+                (rule) =>
+                    !data.master?.rules?.some(
+                        (saved) =>
+                            saved.id === rule.id &&
+                            saved.source === rule.source &&
+                            saved.action === rule.action &&
+                            saved.heartGoal === rule.heartGoal,
+                    ),
+            );
             savingHeartRules = [];
             if (!data.error && changedHeartRule) {
                 masterDirty = true;
-                return setMasterMessage("Máy chủ không lưu đúng luật tim. Khởi động lại Bridge rồi lưu lại.", true);
+                return setMasterMessage(
+                    "Máy chủ không lưu đúng luật tim. Khởi động lại Bridge rồi lưu lại.",
+                    true,
+                );
             }
             if (!data.error && savedCurrentDraft) {
                 masterDirty = false;
                 renderMaster(data.master);
             }
-            setMasterMessage(!data.error && masterDirty ? "Đã lưu bản trước. Còn thay đổi chưa lưu." : data.message, data.error);
+            setMasterMessage(
+                !data.error && masterDirty
+                    ? "Đã lưu bản trước. Còn thay đổi chưa lưu."
+                    : data.message,
+                data.error,
+            );
         }
         if (data.type === "master_test_spawn_result") {
             ui.spawnTestActor.disabled = false;
             ui.testActorStatus.textContent = data.message;
         }
-        if (data.type === "master_test_result") finishRuleTest(data.message, data.error);
+        if (data.type === "master_test_result")
+            finishRuleTest(data.message, data.error);
         if (data.type === "gift_catalog") {
             recentGifts.clear();
             for (const g of data.gifts || [])
                 if (g.giftId) recentGifts.set(String(g.giftId), g);
-            document.getElementById("gift-catalog-status").textContent = ({
-                room: `${data.roomCount} quà từ phòng LIVE · còn lại là quà tham khảo hoặc đã lưu.`,
-                loading: "Đang tải danh mục phòng LIVE…",
-                failed: "Chưa tải được danh mục phòng LIVE. Đang hiện quà đã lưu.",
-            })[data.state] || (data.vietnamReferenceCount
-                ? `${data.vietnamReferenceCount} quà tham khảo Việt Nam. Kết nối LIVE để xác nhận danh mục phòng.`
-                : "Danh mục đã lưu. Kết nối LIVE để đồng bộ quà của phòng.");
+            document.getElementById("gift-catalog-status").textContent =
+                {
+                    room: `${data.roomCount} quà từ phòng LIVE · còn lại là quà tham khảo hoặc đã lưu.`,
+                    loading: "Đang tải danh mục phòng LIVE…",
+                    failed: "Chưa tải được danh mục phòng LIVE. Đang hiện quà đã lưu.",
+                }[data.state] ||
+                (data.vietnamReferenceCount
+                    ? `${data.vietnamReferenceCount} quà tham khảo Việt Nam. Kết nối LIVE để xác nhận danh mục phòng.`
+                    : "Danh mục đã lưu. Kết nối LIVE để đồng bộ quà của phòng.");
             renderGiftCatalog();
-            giftLibraryStatus.textContent = `${recentGifts.size} món · ` +
+            giftLibraryStatus.textContent =
+                `${recentGifts.size} món · ` +
                 document.getElementById("gift-catalog-status").textContent;
         }
         if (data.type === "gift_catalog_refresh_result") {
@@ -593,7 +761,10 @@ function connectSocket() {
             savingRevision = null;
             savingHeartRules = [];
             ui.saveMaster.disabled = false;
-            setMasterMessage("Mất kết nối khi lưu. Hãy kiểm tra và lưu lại.", true);
+            setMasterMessage(
+                "Mất kết nối khi lưu. Hãy kiểm tra và lưu lại.",
+                true,
+            );
         }
         setStatus({
             state: "disconnected",
@@ -627,32 +798,62 @@ ui.spawnTestActor.addEventListener("click", () => {
     ui.testActorStatus.textContent = "Đang chờ game…";
 });
 
-
 ui.addMasterRule.addEventListener("click", () => addRule(emptyRule()));
 ui.filterMaster.addEventListener("input", updateRuleList);
 ui.recentGifts.addEventListener("click", () => {
-    openGiftDialog(gift => addRule(emptyRule({
-        source: "gift", trigger: gift.giftName || "",
-        giftId: String(gift.giftId), displayDiamonds: Number(gift.diamondCount) || 0,
-    })));
+    openGiftDialog((gift) =>
+        addRule(
+            emptyRule({
+                source: "gift",
+                trigger: gift.giftName || "",
+                giftId: String(gift.giftId),
+                displayDiamonds: Number(gift.diamondCount) || 0,
+            }),
+        ),
+    );
 });
 ui.joinMode.addEventListener("change", markMasterDirty);
 ui.giftAlwaysJoins.addEventListener("change", markMasterDirty);
 ui.saveMaster.addEventListener("click", () => {
     if (savingRevision !== null) return;
     const master = readMasterFromUi();
-    const invalid = master.rules.find((rule) => rule.enabled && (rule.source === "gift"
-        ? !rule.giftId : rule.source === "like" ? !Number.isInteger(rule.heartGoal) || rule.heartGoal < 1 || rule.heartGoal > 100000000
-            : rule.source === "chat" && !rule.trigger.split(",").some((value) => value.trim())));
+    const invalid = master.rules.find(
+        (rule) =>
+            rule.enabled &&
+            (rule.source === "gift"
+                ? !rule.giftId
+                : rule.source === "like"
+                  ? !Number.isInteger(rule.heartGoal) ||
+                    rule.heartGoal < 1 ||
+                    rule.heartGoal > 100000000
+                  : rule.source === "chat" &&
+                    !rule.trigger.split(",").some((value) => value.trim())),
+    );
     if (invalid) {
         ui.filterMaster.value = "";
-        selectRule([...ui.masterRules.children].find((row) => row.dataset.ruleId === invalid.id));
-        return setMasterMessage(invalid.source === "gift"
-            ? "Chọn món quà từ thư viện." : invalid.source === "like" ? "Nhập mốc từ 1 đến 100.000.000 tim." : "Nhập lệnh bình luận.", true);
+        selectRule(
+            [...ui.masterRules.children].find(
+                (row) => row.dataset.ruleId === invalid.id,
+            ),
+        );
+        return setMasterMessage(
+            invalid.source === "gift"
+                ? "Chọn món quà từ thư viện."
+                : invalid.source === "like"
+                  ? "Nhập mốc từ 1 đến 100.000.000 tim."
+                  : "Nhập lệnh bình luận.",
+            true,
+        );
     }
-    if (!send({ type: "master_save", master })) return setMasterMessage("Mất kết nối máy chủ. Chưa lưu thay đổi.", true);
+    if (!send({ type: "master_save", master }))
+        return setMasterMessage(
+            "Mất kết nối máy chủ. Chưa lưu thay đổi.",
+            true,
+        );
     savingRevision = masterRevision;
-    savingHeartRules = master.rules.filter((rule) => rule.source === "like" && rule.enabled);
+    savingHeartRules = master.rules.filter(
+        (rule) => rule.source === "like" && rule.enabled,
+    );
     ui.saveMaster.disabled = true;
     setMasterMessage("Đang lưu và áp dụng…");
 });
@@ -678,7 +879,6 @@ document.querySelectorAll("[data-action]").forEach((btn) => {
 /* ═══ INIT ═══════════════════════════════════════════════ */
 connectSocket();
 
-
 // Assets categories share the main Assets navigation entry.
 const assetSections = document.querySelectorAll("[data-asset-section]");
 for (const button of assetSections) {
@@ -688,7 +888,8 @@ for (const button of assetSections) {
             category.setAttribute("aria-pressed", String(selected));
             category.classList.toggle("btn-primary", selected);
             category.classList.toggle("btn-secondary", !selected);
-            document.getElementById(category.dataset.assetSection).hidden = !selected;
+            document.getElementById(category.dataset.assetSection).hidden =
+                !selected;
         }
     });
 }

@@ -62,11 +62,13 @@ let masterWrite = Promise.resolve();
 let pendingMasterSaves = 0;
 function persistMaster(config) {
     const contents = JSON.stringify(config, null, 2) + "\n";
-    const write = masterWrite.catch(() => {}).then(async () => {
-        const temporary = masterConfigPath + ".tmp";
-        await fs.writeFile(temporary, contents, "utf8");
-        await fs.rename(temporary, masterConfigPath);
-    });
+    const write = masterWrite
+        .catch(() => {})
+        .then(async () => {
+            const temporary = masterConfigPath + ".tmp";
+            await fs.writeFile(temporary, contents, "utf8");
+            await fs.rename(temporary, masterConfigPath);
+        });
     masterWrite = write;
     return write;
 }
@@ -106,14 +108,19 @@ const observedGifts = new Map(
 );
 let observedGiftSaveTimer = null;
 const roomGifts = new Map();
-const roomGiftCachePath = path.join(__dirname, "config", "room-gift-cache.json");
+const roomGiftCachePath = path.join(
+    __dirname,
+    "config",
+    "room-gift-cache.json",
+);
 const savedRoomGifts = new Map();
 try {
     const cached = require(roomGiftCachePath);
     if (Array.isArray(cached))
         for (const gift of cached) savedRoomGifts.set(gift.giftId, gift);
 } catch (error) {
-    if (error.code !== "MODULE_NOT_FOUND") console.warn("Không đọc được danh mục quà đã đồng bộ:", error.message);
+    if (error.code !== "MODULE_NOT_FOUND")
+        console.warn("Không đọc được danh mục quà đã đồng bộ:", error.message);
 }
 let giftCatalogState = "saved";
 
@@ -209,22 +216,33 @@ function broadcastMetrics() {
 }
 
 function giftCatalogMessage() {
-    const combined = new Map(vietnamGifts.map(gift => [gift.giftId, gift]));
+    const combined = new Map(vietnamGifts.map((gift) => [gift.giftId, gift]));
     for (const [id, gift] of savedRoomGifts) {
         const reference = combined.get(id);
-        combined.set(id, { ...reference, ...gift, giftPictureUrl: gift.giftPictureUrl || reference?.giftPictureUrl || "" });
+        combined.set(id, {
+            ...reference,
+            ...gift,
+            giftPictureUrl:
+                gift.giftPictureUrl || reference?.giftPictureUrl || "",
+        });
     }
     for (const [id, gift] of observedGifts) {
         const cached = combined.get(id);
         combined.set(id, {
-            ...cached, ...gift,
+            ...cached,
+            ...gift,
             diamondCount: gift.diamondCount || cached?.diamondCount || 0,
             giftPictureUrl: gift.giftPictureUrl || cached?.giftPictureUrl || "",
         });
     }
     for (const [id, gift] of roomGifts) {
         const previous = combined.get(id);
-        combined.set(id, { ...previous, ...gift, giftPictureUrl: gift.giftPictureUrl || previous?.giftPictureUrl || "" });
+        combined.set(id, {
+            ...previous,
+            ...gift,
+            giftPictureUrl:
+                gift.giftPictureUrl || previous?.giftPictureUrl || "",
+        });
     }
     return {
         type: "gift_catalog",
@@ -248,26 +266,52 @@ async function refreshRoomGifts(connection) {
     try {
         const gifts = await connection.fetchAvailableGifts();
         if (connection !== liveConnection) return;
-        if (!Array.isArray(gifts)) throw new Error("Danh mục phòng không hợp lệ");
+        if (!Array.isArray(gifts))
+            throw new Error("Danh mục phòng không hợp lệ");
         roomGifts.clear();
         for (const gift of gifts) {
-            const giftId = String(gift?.id ?? gift?.gift_id ?? gift?.giftId ?? "");
+            const giftId = String(
+                gift?.id ?? gift?.gift_id ?? gift?.giftId ?? "",
+            );
             if (!/^\d+$/.test(giftId) || !gift.name) continue;
-            const image = gift.image?.url_list?.[0] ?? gift.image?.urlList?.[0] ?? gift.image?.url?.[0];
+            const image =
+                gift.image?.url_list?.[0] ??
+                gift.image?.urlList?.[0] ??
+                gift.image?.url?.[0];
             roomGifts.set(giftId, {
-                giftId, giftName: String(gift.name),
-                diamondCount: Number(gift.diamond_count ?? gift.diamondCount) || 0,
-                giftPictureUrl: typeof image === "string" && image.startsWith("https://") ? image : "",
+                giftId,
+                giftName: String(gift.name),
+                diamondCount:
+                    Number(gift.diamond_count ?? gift.diamondCount) || 0,
+                giftPictureUrl:
+                    typeof image === "string" && image.startsWith("https://")
+                        ? image
+                        : "",
             });
         }
-        if (!roomGifts.size) throw new Error("TikTok trả về danh mục quà trống");
+        if (!roomGifts.size)
+            throw new Error("TikTok trả về danh mục quà trống");
         giftCatalogState = "room";
         for (const [id, gift] of roomGifts) {
             const previous = savedRoomGifts.get(id);
-            savedRoomGifts.set(id, { ...gift, giftPictureUrl: gift.giftPictureUrl || previous?.giftPictureUrl || "" });
+            savedRoomGifts.set(id, {
+                ...gift,
+                giftPictureUrl:
+                    gift.giftPictureUrl || previous?.giftPictureUrl || "",
+            });
         }
-        void fs.writeFile(roomGiftCachePath, JSON.stringify([...savedRoomGifts.values()], null, 2) + "\n", "utf8")
-            .catch(error => console.warn("Không lưu được danh mục quà của phòng:", error.message));
+        void fs
+            .writeFile(
+                roomGiftCachePath,
+                JSON.stringify([...savedRoomGifts.values()], null, 2) + "\n",
+                "utf8",
+            )
+            .catch((error) =>
+                console.warn(
+                    "Không lưu được danh mục quà của phòng:",
+                    error.message,
+                ),
+            );
     } catch (error) {
         if (connection !== liveConnection) return;
         giftCatalogState = "failed";
@@ -279,13 +323,26 @@ async function refreshRoomGifts(connection) {
 
 function viewerGuideMessage(config = masterConfig) {
     const labels = {
-        join: "Vào sàn", change: "Đổi nhân vật", wing: "Đổi cánh",
-        avatar_frame: "Khung avatar", camera: "Zoom", medal: "Cánh và huy hiệu",
-        vip: "Zoom", vip_dance: "Quẩy VIP", vip_set: "Bộ VIP", walk: "Đi vòng", fireworks: "Pháo hoa",
-        topdj: "Top DJ và pháo hoa", grow: "Phóng lớn", jump: "Nhảy cao", dance: "Nhảy theo nhạc",
+        join: "Vào sàn",
+        change: "Đổi nhân vật",
+        wing: "Đổi cánh",
+        avatar_frame: "Khung avatar",
+        camera: "Zoom",
+        medal: "Cánh và huy hiệu",
+        vip: "Zoom",
+        vip_dance: "Quẩy VIP",
+        vip_set: "Bộ VIP",
+        walk: "Đi vòng",
+        fireworks: "Pháo hoa",
+        topdj: "Top DJ và pháo hoa",
+        grow: "Phóng lớn",
+        jump: "Nhảy cao",
+        dance: "Nhảy theo nhạc",
     };
     const guideItems = [];
-    const ruleOrder = new Map(config.rules.map((rule, index) => [rule.id, index]));
+    const ruleOrder = new Map(
+        config.rules.map((rule, index) => [rule.id, index]),
+    );
     for (const gift of giftCatalogMessage().gifts) {
         if (!gift.giftId) continue;
         const rule = resolveMasterRule(config, { ...gift, type: "gift" });
@@ -299,12 +356,29 @@ function viewerGuideMessage(config = masterConfig) {
             ruleId: rule.id,
         });
     }
-    guideItems.sort((first, second) => ruleOrder.get(first.ruleId) - ruleOrder.get(second.ruleId));
-    const interactionHints = config.rules.filter(rule => rule.enabled && rule.source === "chat" && rule.trigger)
-        .map(rule => `Gõ "${rule.trigger.split(",").find(value => value.trim())?.trim() || rule.trigger}" → ${labels[rule.action]}`);
+    guideItems.sort(
+        (first, second) =>
+            ruleOrder.get(first.ruleId) - ruleOrder.get(second.ruleId),
+    );
+    const interactionHints = config.rules
+        .filter(
+            (rule) => rule.enabled && rule.source === "chat" && rule.trigger,
+        )
+        .map(
+            (rule) =>
+                `Gõ "${
+                    rule.trigger
+                        .split(",")
+                        .find((value) => value.trim())
+                        ?.trim() || rule.trigger
+                }" → ${labels[rule.action]}`,
+        );
     const shareRule = resolveMasterRule(config, { type: "share" });
-    if (shareRule) interactionHints.push(`Chia sẻ → ${labels[shareRule.action]}`);
-    const heartRules = config.rules.filter(rule => rule.enabled && rule.source === "like");
+    if (shareRule)
+        interactionHints.push(`Chia sẻ → ${labels[shareRule.action]}`);
+    const heartRules = config.rules.filter(
+        (rule) => rule.enabled && rule.source === "like",
+    );
     return { type: "viewer_guide", guideItems, interactionHints, heartRules };
 }
 
@@ -357,14 +431,27 @@ function learnObservedGift(event) {
     let masterChanged = false;
     for (const rule of masterConfig.rules || []) {
         if (!giftId || pendingMasterSaves) break;
-        if (!rule.enabled || rule.source !== "gift" || rule.giftId || rule.match !== "exact") continue;
+        if (
+            !rule.enabled ||
+            rule.source !== "gift" ||
+            rule.giftId ||
+            rule.match !== "exact"
+        )
+            continue;
         const aliases = String(rule.trigger || "")
             .split(",")
             .map(normalizeText)
             .filter(Boolean);
         if (!aliases.includes(normalizeText(giftName))) continue;
-        if (giftCatalogMessage().gifts.some(gift => gift.giftId && gift.giftId !== giftId &&
-            normalizeText(gift.giftName) === normalizeText(giftName))) continue;
+        if (
+            giftCatalogMessage().gifts.some(
+                (gift) =>
+                    gift.giftId &&
+                    gift.giftId !== giftId &&
+                    normalizeText(gift.giftName) === normalizeText(giftName),
+            )
+        )
+            continue;
         rule.giftId = giftId;
         rule.displayDiamonds = unitDiamonds || rule.displayDiamonds || 0;
         masterChanged = true;
@@ -481,7 +568,8 @@ function resolveGiftRule(event) {
             (alias) => normalizeGiftName(alias) === giftName,
         ),
     );
-    if (named && (!event.giftId || event.giftId.startsWith("demo-"))) return named;
+    if (named && (!event.giftId || event.giftId.startsWith("demo-")))
+        return named;
     const value = Number(event.diamondCount) || 0;
     return [...giftConfig.diamondBands]
         .sort((a, b) => b.minimum - a.minimum)
@@ -499,9 +587,12 @@ function normalizeGiftName(value) {
 function emitGameEvent(event) {
     if (isDuplicate(event)) return;
     const now = Date.now();
-    const liveLike = event.type === "like" && (
-        connectionStatus.state === "demo" && String(event.eventId || "").startsWith("demo-") ||
-        connectionStatus.state === "connected" && !String(event.eventId || "").startsWith("demo-"));
+    const liveLike =
+        event.type === "like" &&
+        ((connectionStatus.state === "demo" &&
+            String(event.eventId || "").startsWith("demo-")) ||
+            (connectionStatus.state === "connected" &&
+                !String(event.eventId || "").startsWith("demo-")));
     if (event.userId) {
         let hearts = sessionPersonalHearts.get(event.userId) || 0;
         if (liveLike && event.likeCount > 0) {
@@ -512,8 +603,11 @@ function emitGameEvent(event) {
     }
     let giftRule = null;
     if (event.type === "gift") {
-        giftRule = !event.masterRuleId && String(event.eventId || "").startsWith("demo-")
-            ? resolveGiftRule(event) : null;
+        giftRule =
+            !event.masterRuleId &&
+            String(event.eventId || "").startsWith("demo-")
+                ? resolveGiftRule(event)
+                : null;
         if (giftRule) {
             event.action = giftRule.action;
             event.durationMs = giftRule.durationMs;
@@ -539,7 +633,11 @@ function emitGameEvent(event) {
             lastActive: now,
             personalHearts: event.personalHearts,
         };
-        if (event.action === "wing" || event.action === "medal" || event.action === "vip_set")
+        if (
+            event.action === "wing" ||
+            event.action === "medal" ||
+            event.action === "vip_set"
+        )
             playerState.hasGiftWing = true;
         if (event.action === "avatar_frame" || event.action === "vip_set")
             playerState.hasGiftAvatarFrame = true;
@@ -584,12 +682,19 @@ function emitGameEvent(event) {
 
 function processGameEvent(inputEvent) {
     if (inputEvent.type === "gift" && inputEvent.giftId) {
-        const metadata = roomGifts.get(String(inputEvent.giftId)) || observedGifts.get(String(inputEvent.giftId));
-        if (metadata) inputEvent = {
-            ...inputEvent,
-            giftName: inputEvent.giftName && inputEvent.giftName !== "Gift" ? inputEvent.giftName : metadata.giftName,
-            giftPictureUrl: inputEvent.giftPictureUrl || metadata.giftPictureUrl,
-        };
+        const metadata =
+            roomGifts.get(String(inputEvent.giftId)) ||
+            observedGifts.get(String(inputEvent.giftId));
+        if (metadata)
+            inputEvent = {
+                ...inputEvent,
+                giftName:
+                    inputEvent.giftName && inputEvent.giftName !== "Gift"
+                        ? inputEvent.giftName
+                        : metadata.giftName,
+                giftPictureUrl:
+                    inputEvent.giftPictureUrl || metadata.giftPictureUrl,
+            };
     }
     const safeEvent = sanitizeGameEvent(inputEvent);
     if (!safeEvent) return;
@@ -599,12 +704,26 @@ function processGameEvent(inputEvent) {
     const isKnownPlayer = event.userId && sessionPlayers.has(event.userId);
     const joinsByKeyword = event.action === "join";
     if (!isKnownPlayer) {
-        const isInteraction = ["chat", "gift", "like", "follow", "share"].includes(event.type);
-        const joinsByGift = event.type === "gift" && masterConfig.giftAlwaysJoins;
-        event.spectatorOnly = !isInteraction ||
-            !(masterConfig.joinMode === "all_interactions" || joinsByKeyword || joinsByGift);
+        const isInteraction = [
+            "chat",
+            "gift",
+            "like",
+            "follow",
+            "share",
+        ].includes(event.type);
+        const joinsByGift =
+            event.type === "gift" && masterConfig.giftAlwaysJoins;
+        event.spectatorOnly =
+            !isInteraction ||
+            !(
+                masterConfig.joinMode === "all_interactions" ||
+                joinsByKeyword ||
+                joinsByGift
+            );
     }
-    event.joinedNow = Boolean(event.userId && !isKnownPlayer && !event.spectatorOnly);
+    event.joinedNow = Boolean(
+        event.userId && !isKnownPlayer && !event.spectatorOnly,
+    );
     if (event.type === "gift") {
         if (isRealObservedGift(event)) {
             learnObservedGift(event);
@@ -751,13 +870,36 @@ function startDemo(count) {
     let sequence = 0;
     let scanStart = 0;
     let nextFeatureAt = 0;
-    const featured = rule => rule.source === "gift" || rule.source === "share" ||
-        ["camera", "vip", "vip_dance", "topdj", "medal", "vip_set", "walk", "join", "orbit", "fireworks"].includes(rule.action);
-    const randomDelay = () => Math.max(2000, -Math.log(1 - Math.random()) * Math.max(10000, count * 1500));
+    const featured = (rule) =>
+        rule.source === "gift" ||
+        rule.source === "share" ||
+        [
+            "camera",
+            "vip",
+            "vip_dance",
+            "topdj",
+            "medal",
+            "vip_set",
+            "walk",
+            "join",
+            "orbit",
+            "fireworks",
+        ].includes(rule.action);
+    const randomDelay = () =>
+        Math.max(
+            2000,
+            -Math.log(1 - Math.random()) * Math.max(10000, count * 1500),
+        );
 
     function sendInteraction(viewer, rule, comboCount = 1) {
-        const gift = giftCatalogMessage().gifts.find(item => item.giftId === rule.giftId);
-        const trigger = rule.trigger.split(",").find(value => value.trim())?.trim() || "";
+        const gift = giftCatalogMessage().gifts.find(
+            (item) => item.giftId === rule.giftId,
+        );
+        const trigger =
+            rule.trigger
+                .split(",")
+                .find((value) => value.trim())
+                ?.trim() || "";
         processGameEvent({
             ...mockUser(viewer.index),
             eventId: `demo-rule-${Date.now()}-${++sequence}`,
@@ -767,19 +909,25 @@ function startDemo(count) {
             giftName: gift?.giftName || trigger,
             giftPictureUrl: gift?.giftPictureUrl || "",
             unitDiamondCount: gift?.diamondCount ?? rule.displayDiamonds,
-            diamondCount: rule.source === "gift" ? (gift?.diamondCount ?? rule.displayDiamonds) : 0,
+            diamondCount:
+                rule.source === "gift"
+                    ? (gift?.diamondCount ?? rule.displayDiamonds)
+                    : 0,
             repeatCount: 1,
             comboCount: rule.source === "gift" ? comboCount : 0,
-            likeCount: rule.source === "like" ? 1 + Math.floor(Math.random() * 25) : 0,
+            likeCount:
+                rule.source === "like" ? 1 + Math.floor(Math.random() * 25) : 0,
         });
     }
 
     demoTimer = setInterval(() => {
         const now = Date.now();
-        const rules = masterConfig.rules.filter(rule => rule.enabled);
-        const available = new Set(rules.map(rule => rule.id));
-        for (const id of shownRules) if (!available.has(id)) shownRules.delete(id);
-        if (rules.length && rules.every(rule => shownRules.has(rule.id))) shownRules.clear();
+        const rules = masterConfig.rules.filter((rule) => rule.enabled);
+        const available = new Set(rules.map((rule) => rule.id));
+        for (const id of shownRules)
+            if (!available.has(id)) shownRules.delete(id);
+        if (rules.length && rules.every((rule) => shownRules.has(rule.id)))
+            shownRules.clear();
         let budget = 12;
         for (let step = 0; step < viewers.length && budget > 0; step++) {
             const viewer = viewers[(scanStart + step) % viewers.length];
@@ -793,7 +941,11 @@ function startDemo(count) {
             }
             if (now < viewer.nextActionAt) continue;
             if (viewer.combo) {
-                const rule = rules.find(item => item.id === viewer.combo.ruleId && item.source === "gift");
+                const rule = rules.find(
+                    (item) =>
+                        item.id === viewer.combo.ruleId &&
+                        item.source === "gift",
+                );
                 if (rule) {
                     sendInteraction(viewer, rule, ++viewer.combo.sent);
                     budget--;
@@ -808,18 +960,36 @@ function startDemo(count) {
                 continue;
             }
             if (!rules.length) continue;
-            const eligible = rules.filter(rule => !featured(rule) || now >= nextFeatureAt);
-            if (!eligible.length) { viewer.nextActionAt = now + 1000; continue; }
-            const unseen = eligible.filter(rule => !shownRules.has(rule.id));
+            const eligible = rules.filter(
+                (rule) => !featured(rule) || now >= nextFeatureAt,
+            );
+            if (!eligible.length) {
+                viewer.nextActionAt = now + 1000;
+                continue;
+            }
+            const unseen = eligible.filter((rule) => !shownRules.has(rule.id));
             const pool = unseen.length ? unseen : eligible;
             const rule = pool[Math.floor(Math.random() * pool.length)];
             shownRules.add(rule.id);
             sendInteraction(viewer, rule);
-            if (featured(rule)) nextFeatureAt = now + Math.max(6500, Math.min(30000, rule.durationMs || 0) + 1500);
+            if (featured(rule))
+                nextFeatureAt =
+                    now +
+                    Math.max(
+                        6500,
+                        Math.min(30000, rule.durationMs || 0) + 1500,
+                    );
             budget--;
             if (rule.source === "gift" && Math.random() < 0.2) {
-                viewer.combo = { ruleId: rule.id, sent: 1, total: 2 + Math.floor(Math.random() * 4) };
-                nextFeatureAt = Math.max(nextFeatureAt, now + viewer.combo.total * 1100 + 5000);
+                viewer.combo = {
+                    ruleId: rule.id,
+                    sent: 1,
+                    total: 2 + Math.floor(Math.random() * 4),
+                };
+                nextFeatureAt = Math.max(
+                    nextFeatureAt,
+                    now + viewer.combo.total * 1100 + 5000,
+                );
                 viewer.nextActionAt = now + 700 + Math.random() * 400;
             } else viewer.nextActionAt = now + randomDelay();
         }
@@ -964,19 +1134,41 @@ function attachTikTokEvents(connection) {
         if (!active()) return;
         const event = normalizeGift(data);
         const rule = resolveMasterRule(masterConfig, event);
-        if (event.giftType === 1 && ["change", "wing", "avatar_frame", "medal", "vip_set"].includes(rule?.action)) {
+        if (
+            event.giftType === 1 &&
+            ["change", "wing", "avatar_frame", "medal", "vip_set"].includes(
+                rule?.action,
+            )
+        ) {
             const key = event.userId + ":" + event.giftId;
             const previous = changingStreaks.get(key);
-            const newStreak = previous?.ended && (!event.repeatEnd || (event.eventId && event.eventId !== previous.eventId));
-            const count = previous && !newStreak && event.repeatCount >= previous.count ? previous.count : 0;
+            const newStreak =
+                previous?.ended &&
+                (!event.repeatEnd ||
+                    (event.eventId && event.eventId !== previous.eventId));
+            const count =
+                previous && !newStreak && event.repeatCount >= previous.count
+                    ? previous.count
+                    : 0;
             const delta = Math.max(0, event.repeatCount - count);
             changingStreaks.delete(key);
-            changingStreaks.set(key, { count: event.repeatCount, ended: event.repeatEnd, eventId: event.eventId });
-            if (changingStreaks.size > 2000) changingStreaks.delete(changingStreaks.keys().next().value);
-            if (delta > 0) processGameEvent({
-                ...event, repeatCount: delta, comboCount: event.repeatCount, diamondCount: event.unitDiamondCount * delta,
-                eventId: event.eventId ? event.eventId + ":" + event.repeatCount : "",
+            changingStreaks.set(key, {
+                count: event.repeatCount,
+                ended: event.repeatEnd,
+                eventId: event.eventId,
             });
+            if (changingStreaks.size > 2000)
+                changingStreaks.delete(changingStreaks.keys().next().value);
+            if (delta > 0)
+                processGameEvent({
+                    ...event,
+                    repeatCount: delta,
+                    comboCount: event.repeatCount,
+                    diamondCount: event.unitDiamondCount * delta,
+                    eventId: event.eventId
+                        ? event.eventId + ":" + event.repeatCount
+                        : "",
+                });
             return;
         }
         if (!isPendingGiftStreak(event)) processGameEvent(event);
@@ -1013,7 +1205,12 @@ async function connectToTikTok(username, options = {}) {
             processInitialData: false,
             enableExtendedGiftInfo: false,
             webClientOptions: {
-                searchParams: { app_language: "vi", browser_language: "vi-VN", region: "VN", priority_region: "VN" },
+                searchParams: {
+                    app_language: "vi",
+                    browser_language: "vi-VN",
+                    region: "VN",
+                    priority_region: "VN",
+                },
             },
         });
     } catch (error) {
@@ -1065,8 +1262,12 @@ const pendingTestCommands = new Map();
 let nextTestCommand = 0;
 
 function sendTestCommand(event, reply) {
-    const game = [...wss.clients].find((client) =>
-        client.nativeClient && client.registered && client.role === "overlay" && client.readyState === WebSocket.OPEN,
+    const game = [...wss.clients].find(
+        (client) =>
+            client.nativeClient &&
+            client.registered &&
+            client.role === "overlay" &&
+            client.readyState === WebSocket.OPEN,
     );
     if (!game) return reply("Mở game rồi thử lại.", true);
     const testCommandId = String(++nextTestCommand);
@@ -1119,8 +1320,12 @@ async function handleClientMessage(ws, message) {
             message: "Client chưa đăng ký quyền.",
         });
 
-    const controlOnly =
-        ["master_save", "master_test", "master_test_spawn", "gift_catalog_refresh"].includes(message.type);
+    const controlOnly = [
+        "master_save",
+        "master_test",
+        "master_test_spawn",
+        "gift_catalog_refresh",
+    ].includes(message.type);
     const operatorOnly = new Set([
         "set_username",
         "disconnect_tiktok",
@@ -1143,31 +1348,73 @@ async function handleClientMessage(ws, message) {
     }
 
     if (message.type === "gift_catalog_refresh") {
-        const reply = message => send(ws, { type: "gift_catalog_refresh_result", message });
-        if (connectionStatus.state !== "connected" || typeof liveConnection?.fetchAvailableGifts !== "function")
-            return reply("Kết nối TikTok LIVE trực tiếp để tải danh mục quà của phòng.");
-        if (giftCatalogState === "loading") return reply("Danh mục phòng đang được tải.");
+        const reply = (message) =>
+            send(ws, { type: "gift_catalog_refresh_result", message });
+        if (
+            connectionStatus.state !== "connected" ||
+            typeof liveConnection?.fetchAvailableGifts !== "function"
+        )
+            return reply(
+                "Kết nối TikTok LIVE trực tiếp để tải danh mục quà của phòng.",
+            );
+        if (giftCatalogState === "loading")
+            return reply("Danh mục phòng đang được tải.");
         await refreshRoomGifts(liveConnection);
-        return reply(giftCatalogState === "failed" ? "TikTok chưa trả danh mục quà. Đang hiện thư viện đã lưu." : "");
+        return reply(
+            giftCatalogState === "failed"
+                ? "TikTok chưa trả danh mục quà. Đang hiện thư viện đã lưu."
+                : "",
+        );
     }
 
     if (message.type === "master_save") {
         if (!Array.isArray(message.master?.rules))
-            return send(ws, { type: "master_saved", error: true, message: "Cấu hình không hợp lệ." });
+            return send(ws, {
+                type: "master_saved",
+                error: true,
+                message: "Cấu hình không hợp lệ.",
+            });
         const nextConfig = sanitizeMasterConfig(message.master);
-        if (nextConfig.rules.filter(rule => rule.enabled && rule.source === "like" && rule.action === "level_up").length > 1)
-            return send(ws, { type: "master_saved", error: true, message: "Chỉ bật một luật Tăng cấp cá nhân." });
+        if (
+            nextConfig.rules.filter(
+                (rule) =>
+                    rule.enabled &&
+                    rule.source === "like" &&
+                    rule.action === "level_up",
+            ).length > 1
+        )
+            return send(ws, {
+                type: "master_saved",
+                error: true,
+                message: "Chỉ bật một luật Tăng cấp cá nhân.",
+            });
         const ids = new Set();
         for (const rule of nextConfig.rules) {
             if (!rule.enabled || rule.source !== "gift") continue;
-            const existing = masterConfig.rules.find(item => item.id === rule.id);
-            const legacy = !rule.giftId && existing?.enabled && existing.source === "gift" &&
-                !existing.giftId && existing.trigger === rule.trigger && existing.action === rule.action && existing.match === rule.match;
+            const existing = masterConfig.rules.find(
+                (item) => item.id === rule.id,
+            );
+            const legacy =
+                !rule.giftId &&
+                existing?.enabled &&
+                existing.source === "gift" &&
+                !existing.giftId &&
+                existing.trigger === rule.trigger &&
+                existing.action === rule.action &&
+                existing.match === rule.match;
             if (legacy) continue;
             if (!/^\d+$/.test(rule.giftId))
-                return send(ws, { type: "master_saved", error: true, message: `Chọn Gift ID TikTok cho luật “${rule.trigger || rule.id}”.` });
+                return send(ws, {
+                    type: "master_saved",
+                    error: true,
+                    message: `Chọn Gift ID TikTok cho luật “${rule.trigger || rule.id}”.`,
+                });
             if (ids.has(rule.giftId))
-                return send(ws, { type: "master_saved", error: true, message: `Gift ID #${rule.giftId} đang có hai luật bật. Chỉ bật một luật cho mỗi quà.` });
+                return send(ws, {
+                    type: "master_saved",
+                    error: true,
+                    message: `Gift ID #${rule.giftId} đang có hai luật bật. Chỉ bật một luật cho mỗi quà.`,
+                });
             ids.add(rule.giftId);
         }
         pendingMasterSaves++;
@@ -1175,14 +1422,22 @@ async function handleClientMessage(ws, message) {
             await persistMaster(nextConfig);
         } catch (error) {
             console.error("Cannot save interaction rules:", error);
-            return send(ws, { type: "master_saved", error: true, message: "Lưu thất bại. Bản đang sửa vẫn còn." });
+            return send(ws, {
+                type: "master_saved",
+                error: true,
+                message: "Lưu thất bại. Bản đang sửa vẫn còn.",
+            });
         } finally {
             pendingMasterSaves--;
         }
         masterConfig = nextConfig;
         broadcast({ type: "master_config", master: masterConfig });
         broadcast(viewerGuideMessage());
-        return send(ws, { type: "master_saved", master: masterConfig, message: "Đã lưu và áp dụng." });
+        return send(ws, {
+            type: "master_saved",
+            master: masterConfig,
+            message: "Đã lưu và áp dụng.",
+        });
     }
 
     if (message.type === "master_test_ack") {
@@ -1191,29 +1446,63 @@ async function handleClientMessage(ws, message) {
         clearTimeout(pending.timeout);
         pendingTestCommands.delete(message.testCommandId);
         const missing = message.testActorMissing === true;
-        return pending.reply(missing ? "Bấm Thêm nhân vật test trước." : null, missing);
+        return pending.reply(
+            missing ? "Bấm Thêm nhân vật test trước." : null,
+            missing,
+        );
     }
 
     if (message.type === "master_test_spawn") {
-        return sendTestCommand({ type: "master_test_spawn" }, (text, error = false) =>
-            send(ws, { type: "master_test_spawn_result", message: text || "Nhân vật test đã có mặt trong game.", error }),
+        return sendTestCommand(
+            { type: "master_test_spawn" },
+            (text, error = false) =>
+                send(ws, {
+                    type: "master_test_spawn_result",
+                    message: text || "Nhân vật test đã có mặt trong game.",
+                    error,
+                }),
         );
     }
 
     if (message.type === "master_test") {
-        const config = message.master ? sanitizeMasterConfig(message.master) : masterConfig;
-        const rule = config.rules.find((item) => item.id === message.ruleId && item.enabled);
-        const result = (text, error = false) => send(ws, { type: "master_test_result", message: text, error });
+        const config = message.master
+            ? sanitizeMasterConfig(message.master)
+            : masterConfig;
+        const rule = config.rules.find(
+            (item) => item.id === message.ruleId && item.enabled,
+        );
+        const result = (text, error = false) =>
+            send(ws, { type: "master_test_result", message: text, error });
         if (!rule) return result("Hãy bật luật trước khi thử.", true);
-        const trigger = rule.trigger.split(",").find((value) => value.trim())?.trim();
+        const trigger = rule.trigger
+            .split(",")
+            .find((value) => value.trim())
+            ?.trim();
         const catalog = giftCatalogMessage().gifts;
-        const catalogGift = typeof message.giftId === "string" ? catalog.find(gift => gift.giftId === message.giftId) : null;
-        if (message.giftId && !catalogGift) return result("Quà này chưa có trong thư viện.", true);
-        const learned = catalogGift || catalog.find(gift => gift.giftId === rule.giftId && rule.giftId);
-        if (!trigger && (rule.source === "chat" || (rule.source === "gift" && !rule.giftId)))
-            return result("Nhập từ khóa, tên quà hoặc ID quà trước khi thử.", true);
-        const repeatCount = rule.source === "gift" ? Number(message.repeatCount ?? 1) : 1;
-        if (!Number.isInteger(repeatCount) || repeatCount < 1 || repeatCount > 100)
+        const catalogGift =
+            typeof message.giftId === "string"
+                ? catalog.find((gift) => gift.giftId === message.giftId)
+                : null;
+        if (message.giftId && !catalogGift)
+            return result("Quà này chưa có trong thư viện.", true);
+        const learned =
+            catalogGift ||
+            catalog.find((gift) => gift.giftId === rule.giftId && rule.giftId);
+        if (
+            !trigger &&
+            (rule.source === "chat" || (rule.source === "gift" && !rule.giftId))
+        )
+            return result(
+                "Nhập từ khóa, tên quà hoặc ID quà trước khi thử.",
+                true,
+            );
+        const repeatCount =
+            rule.source === "gift" ? Number(message.repeatCount ?? 1) : 1;
+        if (
+            !Number.isInteger(repeatCount) ||
+            repeatCount < 1 ||
+            repeatCount > 100
+        )
             return result("Nhập số lượng từ 1 đến 100.", true);
         const sample = sanitizeGameEvent({
             type: rule.source,
@@ -1222,15 +1511,31 @@ async function handleClientMessage(ws, message) {
             nickname: "Thử tương tác",
             comment: rule.source === "chat" ? trigger : "",
             giftId: learned?.giftId || rule.giftId,
-            giftName: rule.source === "gift" ? learned?.giftName || trigger || "Quà thử" : "",
+            giftName:
+                rule.source === "gift"
+                    ? learned?.giftName || trigger || "Quà thử"
+                    : "",
             repeatCount,
-            diamondCount: (learned?.diamondCount ?? (rule.displayDiamonds || 1)) * repeatCount,
+            diamondCount:
+                (learned?.diamondCount ?? (rule.displayDiamonds || 1)) *
+                repeatCount,
         });
-        const matched = rule.source === "like" ? rule : resolveMasterRule(config, sample);
+        const matched =
+            rule.source === "like" ? rule : resolveMasterRule(config, sample);
         if (matched?.id !== rule.id)
-            return result("Luật khác được ưu tiên cho điều kiện này. Kiểm tra ID quà hoặc thứ tự luật.", true);
-        const preview = { ...applyRule(sample, matched), comboCount: repeatCount, preview: true, joinedNow: matched.action === "join" };
-        return sendTestCommand(preview, (text, error) => result(text || "Đã chạy luật trên nhân vật test.", error));
+            return result(
+                "Luật khác được ưu tiên cho điều kiện này. Kiểm tra ID quà hoặc thứ tự luật.",
+                true,
+            );
+        const preview = {
+            ...applyRule(sample, matched),
+            comboCount: repeatCount,
+            preview: true,
+            joinedNow: matched.action === "join",
+        };
+        return sendTestCommand(preview, (text, error) =>
+            result(text || "Đã chạy luật trên nhân vật test.", error),
+        );
     }
 
     if (message.type === "set_username") {

@@ -6,7 +6,10 @@ const { isAllowedOrigin, isLoopbackAddress } = require("../security");
 
 function mountHttpRoutes(app, port, getConfig) {
     function requireStudioOrigin(req, res, next) {
-        if (!isAllowedOrigin(req.headers.origin, port) || req.headers["sec-fetch-site"] === "cross-site") {
+        if (
+            !isAllowedOrigin(req.headers.origin, port) ||
+            req.headers["sec-fetch-site"] === "cross-site"
+        ) {
             return res.status(403).json({ error: "Forbidden" });
         }
         next();
@@ -20,7 +23,10 @@ function mountHttpRoutes(app, port, getConfig) {
     };
     app.get("/", (_req, res) => res.redirect("/control.html"));
     app.use(express.static(projectPaths.public, staticOptions));
-    app.use("/assets/gifs", express.static(projectPaths.characterGifs, staticOptions));
+    app.use(
+        "/assets/gifs",
+        express.static(projectPaths.characterGifs, staticOptions),
+    );
     app.use(
         "/assets/banners",
         express.static(projectPaths.banners, staticOptions),
@@ -34,18 +40,27 @@ function mountHttpRoutes(app, port, getConfig) {
         express.static(projectPaths.sourceVideos, staticOptions),
     );
 
-
     app.get("/api/health", (_req, res) => {
-        res.json({ status: "ok", appId: "tiktok-live-bridge", version: "1.0.0" });
+        res.json({
+            status: "ok",
+            appId: "tiktok-live-bridge",
+            version: "1.0.0",
+        });
     });
 
     app.get("/api/config", (_req, res) => res.json(getConfig()));
-    app.get("/api/avatar", requireStudioOrigin, require("./avatar").serveAvatar);
+    app.get(
+        "/api/avatar",
+        requireStudioOrigin,
+        require("./avatar").serveAvatar,
+    );
 
     app.get("/api/gifs", async (_req, res) => {
         try {
             const files = await fs.readdir(projectPaths.characterGifs);
-            res.json(files.filter((file) => file.toLowerCase().endsWith(".gif")));
+            res.json(
+                files.filter((file) => file.toLowerCase().endsWith(".gif")),
+            );
         } catch (error) {
             if (error.code === "ENOENT") return res.json([]);
             console.error("Không thể đọc thư mục GIF:", error);
@@ -101,11 +116,7 @@ function mountHttpRoutes(app, port, getConfig) {
         )
             return res.status(403).json({ error: "Forbidden" });
         try {
-            res.json(
-                await require("./open-game").openGame(
-                    projectPaths.root,
-                ),
-            );
+            res.json(await require("./open-game").openGame(projectPaths.root));
         } catch (error) {
             console.error("Open game:", error.message);
             res.status(500).json({
@@ -132,17 +143,22 @@ function mountHttpRoutes(app, port, getConfig) {
     );
     app.use(
         "/builtin-assets",
-        express.static(
-            projectPaths.resources,
-            { dotfiles: "deny", index: false },
-        ),
+        express.static(projectPaths.resources, {
+            dotfiles: "deny",
+            index: false,
+        }),
     );
     app.use(
         "/library-files",
-        express.static(projectPaths.library, { dotfiles: "deny", index: false }),
+        express.static(projectPaths.library, {
+            dotfiles: "deny",
+            index: false,
+        }),
     );
 
-    app.use((_req, res) => res.status(404).type("text/plain").send("Not found"));
+    app.use((_req, res) =>
+        res.status(404).type("text/plain").send("Not found"),
+    );
 }
 
 module.exports = { mountHttpRoutes };

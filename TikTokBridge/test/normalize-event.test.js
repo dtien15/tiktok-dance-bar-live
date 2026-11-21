@@ -70,7 +70,11 @@ test("normalizes gift value and detects unfinished streaks", () => {
 });
 
 test("normalizes direct LIVE v3 gifts and likes for the same viewer", () => {
-    const user = { id: "7123456789012345678", displayId: "viewer", nickname: "Viewer" };
+    const user = {
+        id: "7123456789012345678",
+        displayId: "viewer",
+        nickname: "Viewer",
+    };
     const gift = normalizeGift({
         user,
         giftId: "5655",

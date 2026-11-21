@@ -50,28 +50,46 @@
                 ? item.source
                 : item.preview;
             if (item.preview && item.preview !== imageSource) {
-                image.addEventListener("error", () => {
-                    image.src = item.preview;
-                }, { once: true });
+                image.addEventListener(
+                    "error",
+                    () => {
+                        image.src = item.preview;
+                    },
+                    { once: true },
+                );
             }
             image.alt = "";
             image.loading = "lazy";
             image.src = imageSource;
             const name = document.createElement("strong");
-            const prefix = { character: "Dance", wing: "Cánh", banner: "Bảng hiệu", avatarFrame: "Khung" }[item.kind];
-            const number = item.danceNumber ?? item.displayNumber ?? item.avatarRank ?? index + 1;
+            const prefix = {
+                character: "Dance",
+                wing: "Cánh",
+                banner: "Bảng hiệu",
+                avatarFrame: "Khung",
+            }[item.kind];
+            const number =
+                item.danceNumber ??
+                item.displayNumber ??
+                item.avatarRank ??
+                index + 1;
             const displayName = `${prefix} ${number}`;
             name.textContent = displayName;
             name.title = displayName;
             const info = document.createElement("small");
             info.textContent =
-                { character: "Nhân vật", wing: "Cánh", banner: "Bảng hiệu", avatarFrame: `Top ${item.avatarRank}` }[
-                    item.kind
-                ] +
+                {
+                    character: "Nhân vật",
+                    wing: "Cánh",
+                    banner: "Bảng hiệu",
+                    avatarFrame: `Top ${item.avatarRank}`,
+                }[item.kind] +
                 " · " +
                 item.frames +
                 " frame" +
-                (item.kind === "banner" && data.banner === item.id ? " · Đang dùng" : "");
+                (item.kind === "banner" && data.banner === item.id
+                    ? " · Đang dùng"
+                    : "");
             const testButton = document.createElement("button");
             testButton.className = "btn btn-primary";
             testButton.textContent = "Test";
@@ -80,7 +98,9 @@
             const toggle = document.createElement("button");
             toggle.className = "btn btn-secondary";
             toggle.textContent = item.enabled ? "Bật" : "Tắt";
-            toggle.title = item.enabled ? "Bấm để tắt asset" : "Bấm để bật asset";
+            toggle.title = item.enabled
+                ? "Bấm để tắt asset"
+                : "Bấm để bật asset";
             toggle.setAttribute("aria-pressed", String(item.enabled));
             toggle.onclick = async () => {
                 try {
@@ -121,7 +141,8 @@
             remove.className = "btn btn-danger";
             remove.textContent = "Xóa";
             remove.onclick = async () => {
-                if (!window.confirm(`Xóa “${displayName}” khỏi Assets?`)) return;
+                if (!window.confirm(`Xóa “${displayName}” khỏi Assets?`))
+                    return;
                 remove.disabled = true;
                 try {
                     await api("/delete", { id: item.id });

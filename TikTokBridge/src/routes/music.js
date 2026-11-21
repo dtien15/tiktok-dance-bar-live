@@ -172,11 +172,9 @@ function musicRouter(folder) {
                 res.status(201).json({ name });
             } catch (error) {
                 if (error.code === "EEXIST")
-                    return res
-                        .status(409)
-                        .json({
-                            error: "Tên bài hát đã tồn tại. Hãy đổi tên file rồi tải lại.",
-                        });
+                    return res.status(409).json({
+                        error: "Tên bài hát đã tồn tại. Hãy đổi tên file rồi tải lại.",
+                    });
                 next(error);
             }
         },

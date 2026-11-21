@@ -9,9 +9,13 @@ function normalizeUser(data = {}) {
         user.avatarLarge?.urlList,
         user.profilePictureUrls,
         user.profilePictureUrl,
-    ].flat().filter((url) => typeof url === "string" && /^https:\/\//i.test(url));
-    const avatar = avatarSources.find((url) => /\.(?:jpe?g|png)(?:[?~]|$)/i.test(url))
-        || avatarSources[0] || "";
+    ]
+        .flat()
+        .filter((url) => typeof url === "string" && /^https:\/\//i.test(url));
+    const avatar =
+        avatarSources.find((url) => /\.(?:jpe?g|png)(?:[?~]|$)/i.test(url)) ||
+        avatarSources[0] ||
+        "";
     const username = user.uniqueId || user.displayId;
     const fallbackId = username || user.nickname || `guest-${Date.now()}`;
 
@@ -50,7 +54,10 @@ function normalizeGift(data) {
     const repeatCount = Math.max(1, Number(data.repeatCount) || 1);
     const diamondCount = Math.max(
         0,
-        Number(details.diamondCount) || Number(catalog.diamondCount ?? catalog.diamond_count) || Number(data.diamondCount) || 0,
+        Number(details.diamondCount) ||
+            Number(catalog.diamondCount ?? catalog.diamond_count) ||
+            Number(data.diamondCount) ||
+            0,
     );
 
     return {
@@ -58,11 +65,30 @@ function normalizeGift(data) {
         eventId: eventId(data),
         ...normalizeUser(data),
         giftId: String(data.giftId || details.id || catalog.id || ""),
-        giftName: String(details.name || details.giftName || catalog.name || catalog.giftName || data.giftName || "Gift"),
-        giftType: Number(details.type || details.giftType || catalog.type || catalog.giftType || data.giftType) || 0,
-        giftPictureUrl: details.image?.urlList?.[0] || details.image?.url_list?.[0] ||
-            details.giftImage?.url?.[0] || catalog.image?.url_list?.[0] || catalog.image?.urlList?.[0] ||
-            data.giftPictureUrl || "",
+        giftName: String(
+            details.name ||
+                details.giftName ||
+                catalog.name ||
+                catalog.giftName ||
+                data.giftName ||
+                "Gift",
+        ),
+        giftType:
+            Number(
+                details.type ||
+                    details.giftType ||
+                    catalog.type ||
+                    catalog.giftType ||
+                    data.giftType,
+            ) || 0,
+        giftPictureUrl:
+            details.image?.urlList?.[0] ||
+            details.image?.url_list?.[0] ||
+            details.giftImage?.url?.[0] ||
+            catalog.image?.url_list?.[0] ||
+            catalog.image?.urlList?.[0] ||
+            data.giftPictureUrl ||
+            "",
         repeatCount,
         repeatEnd: Number(data.repeatEnd) > 0,
         unitDiamondCount: diamondCount,
@@ -76,7 +102,10 @@ function normalizeLike(data) {
         eventId: eventId(data),
         ...normalizeUser(data),
         likeCount: Math.max(1, Number(data.likeCount ?? data.count) || 1),
-        totalLikeCount: Math.max(0, Number(data.totalLikeCount ?? data.total) || 0),
+        totalLikeCount: Math.max(
+            0,
+            Number(data.totalLikeCount ?? data.total) || 0,
+        ),
     };
 }
 

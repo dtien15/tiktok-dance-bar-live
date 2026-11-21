@@ -85,29 +85,56 @@ test("chat hey maps to join", () => {
 });
 
 test("shares use the saved action and heart goals do not trigger on individual likes", () => {
-    const config = sanitizeMasterConfig({ rules: [
-        { id: "share", source: "share", action: "jump" },
-        { id: "milestone", source: "like", action: "orbit", heartGoal: 500 },
-        { id: "level", source: "like", action: "level_up", heartGoal: 100 },
-    ] });
+    const config = sanitizeMasterConfig({
+        rules: [
+            { id: "share", source: "share", action: "jump" },
+            {
+                id: "milestone",
+                source: "like",
+                action: "orbit",
+                heartGoal: 500,
+            },
+            { id: "level", source: "like", action: "level_up", heartGoal: 100 },
+        ],
+    });
     assert.equal(resolveMasterRule(config, { type: "share" }).action, "jump");
     assert.equal(config.rules[1].heartGoal, 500);
     assert.equal(config.rules[1].action, "orbit");
-    assert.equal(applyRule({ type: "like" }, config.rules[2]).action, "level_up");
+    assert.equal(
+        applyRule({ type: "like" }, config.rules[2]).action,
+        "level_up",
+    );
     assert.equal(applyRule({ type: "like" }, config.rules[2]).heartGoal, 100);
-    assert.equal(resolveMasterRule(config, { type: "like", likeCount: 500 }), null);
+    assert.equal(
+        resolveMasterRule(config, { type: "like", likeCount: 500 }),
+        null,
+    );
 });
 
 test("a known gift ID cannot trigger a different ID's rule through its name", () => {
-    assert.equal(resolveMasterRule(master, {
-        type: "gift", giftId: "999", giftName: "Rosa",
-    }), null);
-    assert.equal(resolveMasterRule(master, {
-        type: "gift", giftName: "Rosa",
-    }), null);
+    assert.equal(
+        resolveMasterRule(master, {
+            type: "gift",
+            giftId: "999",
+            giftName: "Rosa",
+        }),
+        null,
+    );
+    assert.equal(
+        resolveMasterRule(master, {
+            type: "gift",
+            giftName: "Rosa",
+        }),
+        null,
+    );
     for (const action of ["wing", "avatar_frame"]) {
-        const config = sanitizeMasterConfig({ rules: [{ source: "gift", giftId: "123", action }] });
-        assert.equal(resolveMasterRule(config, { type: "gift", giftId: "123" }).action, action);
+        const config = sanitizeMasterConfig({
+            rules: [{ source: "gift", giftId: "123", action }],
+        });
+        assert.equal(
+            resolveMasterRule(config, { type: "gift", giftId: "123" }).action,
+            action,
+        );
     }
 });
 
@@ -127,15 +154,25 @@ test("jump and nhảy comments trigger a short built-in jump without a gift rule
 
 test("explicit interaction rules take priority over the built-in jump command", () => {
     const config = sanitizeMasterConfig({
-        rules: [{ id: "custom", source: "chat", trigger: "NHẢY", action: "grow" }],
+        rules: [
+            { id: "custom", source: "chat", trigger: "NHẢY", action: "grow" },
+        ],
     });
     const event = { type: "chat", comment: "nhay" };
-    assert.equal(applyBuiltInChatCommand(applyRule(event, resolveMasterRule(config, event))).action, "grow");
+    assert.equal(
+        applyBuiltInChatCommand(
+            applyRule(event, resolveMasterRule(config, event)),
+        ).action,
+        "grow",
+    );
 });
 
 test("Vietnamese commands with đ match their unaccented spelling", () => {
     const config = sanitizeMasterConfig({
         rules: [{ id: "jump", source: "chat", trigger: "đổi", action: "jump" }],
     });
-    assert.equal(resolveMasterRule(config, { type: "chat", comment: "DOI" }).action, "jump");
+    assert.equal(
+        resolveMasterRule(config, { type: "chat", comment: "DOI" }).action,
+        "jump",
+    );
 });

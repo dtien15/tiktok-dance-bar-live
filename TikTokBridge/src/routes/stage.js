@@ -51,7 +51,12 @@ function stageRouter(folder) {
             } catch (error) {
                 if (error.code !== "ENOENT") throw error;
             }
-            res.json({ mode: settings.mode, video: settings.video, videos, status });
+            res.json({
+                mode: settings.mode,
+                video: settings.video,
+                videos,
+                status,
+            });
         } catch (error) {
             next(error);
         }
