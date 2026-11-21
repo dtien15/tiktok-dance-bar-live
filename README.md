@@ -31,4 +31,4 @@ Trong tab **Assets** bạn có thể quản lý nhân vật, cánh, bảng hiệ
 - Chi tiết đường dẫn, build C# và sao lưu: [docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md).
 - Hướng dẫn sử dụng: [docs/usage/HUONG_DAN_SU_DUNG.txt](docs/usage/HUONG_DAN_SU_DUNG.txt).
 
-Giấy phép mã nguồn: [MIT](LICENSE). Thông tin nguồn và giấy phép tài nguyên bên thứ ba được giữ cạnh asset.
+Thông tin nguồn và giấy phép tài nguyên bên thứ ba được giữ cạnh asset.
